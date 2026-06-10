@@ -1,0 +1,350 @@
+
+<h2 class="sr-only">Dashboard RENIPED — análisis comparativo del dataset de personas desaparecidas en Perú, antes y después del procesamiento. Incluye métricas clave, distribuciones y comparativos de variables modificadas.</h2>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{background:#0F1117;border-radius:var(--border-radius-lg);padding:0;overflow:hidden;font-family:var(--font-sans)}
+
+.header{background:linear-gradient(135deg,#1a1f2e 0%,#0F1117 100%);border-bottom:1px solid rgba(255,255,255,.07);padding:1.4rem 1.6rem 1.2rem}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.5rem}
+.header-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(226,75,74,.15);border:0.5px solid rgba(226,75,74,.35);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:500;color:#f08080;margin-bottom:.5rem}
+.header-badge .dot{width:6px;height:6px;border-radius:50%;background:#E24B4A;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.header h1{font-size:20px;font-weight:500;color:#fff;line-height:1.2;margin-bottom:.25rem}
+.header p{font-size:12px;color:rgba(255,255,255,.4);line-height:1.4}
+.header-meta{display:flex;gap:1.5rem;margin-top:.8rem}
+.meta-item{font-size:11px;color:rgba(255,255,255,.35);display:flex;align-items:center;gap:5px}
+.meta-item strong{color:rgba(255,255,255,.6);font-weight:500}
+
+.body{padding:1.2rem 1.4rem}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.4rem}
+.kpi{background:#181c27;border:0.5px solid rgba(255,255,255,.07);border-radius:var(--border-radius-md);padding:.8rem 1rem;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;border-radius:2px 0 0 2px}
+.kpi.k-red::before{background:#E24B4A}.kpi.k-blue::before{background:#378ADD}
+.kpi.k-green::before{background:#1D9E75}.kpi.k-amber::before{background:#EF9F27}
+.kpi .k-label{font-size:10px;color:rgba(255,255,255,.38);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.3rem}
+.kpi .k-val{font-size:24px;font-weight:500;color:#fff;line-height:1}
+.kpi .k-sub{font-size:10px;margin-top:.35rem}
+.k-sub.neg{color:#f08080}.k-sub.pos{color:#5dd6a8}.k-sub.neu{color:rgba(255,255,255,.35)}
+
+.sec{margin-bottom:1.4rem}
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem}
+.sec-title{font-size:11px;font-weight:500;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em}
+.tag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.tag-change{background:rgba(239,159,39,.12);color:#EF9F27;border:0.5px solid rgba(239,159,39,.3)}
+.tag-nochange{background:rgba(255,255,255,.05);color:rgba(255,255,255,.35);border:0.5px solid rgba(255,255,255,.1)}
+
+.chart-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.panel{background:#181c27;border:0.5px solid rgba(255,255,255,.07);border-radius:var(--border-radius-md);padding:.9rem 1rem}
+.panel-title{font-size:11px;font-weight:500;color:rgba(255,255,255,.55);margin-bottom:.6rem}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:.5rem}
+.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:rgba(255,255,255,.4)}
+.leg span{width:8px;height:8px;border-radius:1px;display:inline-block}
+
+.diff-bar-wrap{margin-top:.5rem}
+.diff-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.diff-row .dr-label{font-size:10px;color:rgba(255,255,255,.45);width:110px;flex-shrink:0}
+.diff-row .dr-bars{flex:1;display:flex;flex-direction:column;gap:3px}
+.diff-row .bar-raw,.diff-row .bar-pro{height:9px;border-radius:2px;transition:width .4s}
+.bar-raw{background:rgba(226,75,74,.55)}
+.bar-pro{background:rgba(29,158,117,.7)}
+.diff-row .dr-vals{font-size:10px;color:rgba(255,255,255,.4);width:50px;text-align:right;flex-shrink:0}
+
+.steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.4rem}
+.step{background:#181c27;border:0.5px solid rgba(255,255,255,.07);border-radius:var(--border-radius-md);padding:.75rem .9rem;position:relative}
+.step-num{font-size:9px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.25);margin-bottom:.4rem}
+.step-name{font-size:12px;font-weight:500;color:#fff;margin-bottom:.3rem;line-height:1.3}
+.step-detail{font-size:10px;color:rgba(255,255,255,.35);line-height:1.4}
+.step-result{font-size:11px;font-weight:500;margin-top:.4rem}
+.step-result.ok{color:#5dd6a8}.step-result.warn{color:#f9c97c}.step-result.info{color:#79b8f3}
+.step::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;border-radius:var(--border-radius-md) var(--border-radius-md) 0 0}
+.step.s1::after{background:#E24B4A}.step.s2::after{background:#EF9F27}
+.step.s3::after{background:#378ADD}.step.s4::after{background:#1D9E75}
+
+.cov-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.cov-name{font-size:10px;color:rgba(255,255,255,.5);width:105px;flex-shrink:0}
+.cov-track{flex:1;height:7px;background:rgba(255,255,255,.07);border-radius:4px;overflow:hidden}
+.cov-fill{height:100%;border-radius:4px}
+.cov-pct{font-size:10px;font-weight:500;width:36px;text-align:right;flex-shrink:0}
+
+.divider{border:none;border-top:1px solid rgba(255,255,255,.05);margin:1rem 0}
+</style>
+
+<div class="wrap">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-badge"><span class="dot"></span> Análisis completado</div>
+        <h1>RENIPED — Personas Desaparecidas en Perú</h1>
+        <p>Comparativo de calidad de datos: dataset raw vs. procesado · Web scraping PNP · Mayo–Junio 2024</p>
+      </div>
+    </div>
+    <div class="header-meta">
+      <div class="meta-item"><strong>Fuente</strong> PNP / RENIPED</div>
+      <div class="meta-item"><strong>Método</strong> Web scraping</div>
+      <div class="meta-item"><strong>Script</strong> processing.py</div>
+      <div class="meta-item"><strong>Registros</strong> 3,801</div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <div class="kpi-grid">
+      <div class="kpi k-blue">
+        <div class="k-label">Total registros</div>
+        <div class="k-val">3,801</div>
+        <div class="k-sub neu">Dataset procesado final</div>
+      </div>
+      <div class="kpi k-red">
+        <div class="k-label">Duplicados eliminados</div>
+        <div class="k-val">11</div>
+        <div class="k-sub neg">Paso 1 de limpieza</div>
+      </div>
+      <div class="kpi k-amber">
+        <div class="k-label">Menores de edad</div>
+        <div class="k-val">50.1%</div>
+        <div class="k-sub neg">Edad &lt; 18 años · alerta</div>
+      </div>
+      <div class="kpi k-green">
+        <div class="k-label">Han aparecido</div>
+        <div class="k-val">45.3%</div>
+        <div class="k-sub pos">Aparecido = True</div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-hd">
+        <span class="sec-title">Pipeline de limpieza — 4 pasos aplicados</span>
+      </div>
+      <div class="steps-grid">
+        <div class="step s1">
+          <div class="step-num">Paso 01</div>
+          <div class="step-name">Duplicados</div>
+          <div class="step-detail">drop_duplicates() sobre todo el dataframe</div>
+          <div class="step-result warn">11 filas eliminadas</div>
+        </div>
+        <div class="step s2">
+          <div class="step-num">Paso 02</div>
+          <div class="step-name">Horas negativas</div>
+          <div class="step-detail">Horas para Aparecer con valor &lt; 0 se marcan como NaN. La fila se conserva.</div>
+          <div class="step-result warn">Valores negativos → NaN</div>
+        </div>
+        <div class="step s3">
+          <div class="step-num">Paso 03</div>
+          <div class="step-name">Coordenadas</div>
+          <div class="step-detail">Lat/Lon fuera del bounding box de Perú → NaN. Resto del registro intacto.</div>
+          <div class="step-result info">Fuera de Perú → NaN</div>
+        </div>
+        <div class="step s4">
+          <div class="step-num">Paso 04</div>
+          <div class="step-name">Categóricas</div>
+          <div class="step-detail">Title case + strip. "Sin Información" reemplazado por NaN en 8 columnas.</div>
+          <div class="step-result ok">Estandarizado</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-hd">
+        <span class="sec-title">Variables con cambio real — comparativo raw vs procesado</span>
+        <span class="tag tag-change">Hubo cambio</span>
+      </div>
+      <div class="chart-2col">
+        <div class="panel">
+          <div class="panel-title">Horas para aparecer — valores negativos corregidos</div>
+          <div class="legend">
+            <div class="leg"><span style="background:rgba(226,75,74,.6)"></span>Raw (incluye negativos)</div>
+            <div class="leg"><span style="background:rgba(29,158,117,.75)"></span>Procesado</div>
+          </div>
+          <div style="position:relative;width:100%;height:175px">
+            <canvas id="c1" role="img" aria-label="Histograma de horas para aparecer antes y después del procesamiento. Los valores negativos desaparecen en el dataset procesado.">Horas para aparecer: raw incluye valores negativos eliminados en procesado.</canvas>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Distribución de edad — efecto de quitar duplicados</div>
+          <div class="legend">
+            <div class="leg"><span style="background:rgba(226,75,74,.6)"></span>Raw (3,812)</div>
+            <div class="leg"><span style="background:rgba(55,138,221,.75)"></span>Procesado (3,801)</div>
+          </div>
+          <div style="position:relative;width:100%;height:175px">
+            <canvas id="c2" role="img" aria-label="Distribución de edades comparativa raw vs procesado. Diferencia mínima tras eliminar 11 duplicados.">Distribución de edades: cambio mínimo, concentración entre 12 y 35 años en ambos datasets.</canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec" style="margin-top:1.2rem">
+      <div class="sec-hd">
+        <span class="sec-title">Horas para denunciar — sin cambio · distribución raw</span>
+        <span class="tag tag-nochange">Sin cambio</span>
+      </div>
+      <div class="chart-2col">
+        <div class="panel">
+          <div class="panel-title">Distribución completa · mediana 23 h</div>
+          <div class="legend">
+            <div class="leg"><span style="background:rgba(55,138,221,.65)"></span>Frecuencia</div>
+            <div class="leg"><span style="background:#E24B4A;width:2px;height:8px"></span>Mediana 23 h</div>
+          </div>
+          <div style="position:relative;width:100%;height:155px">
+            <canvas id="c3" role="img" aria-label="Histograma de horas para denunciar. Mediana 23 horas, rango hasta 368 horas, distribución asimétrica a la derecha.">Horas para denunciar: mediana 23h, máximo 368h.</canvas>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Cobertura por variable · dataset procesado</div>
+          <div style="margin-top:.4rem">
+            <div class="cov-row">
+              <span class="cov-name">Edad</span>
+              <div class="cov-track"><div class="cov-fill" style="width:100%;background:#1D9E75"></div></div>
+              <span class="cov-pct" style="color:#5dd6a8">100%</span>
+            </div>
+            <div class="cov-row">
+              <span class="cov-name">Hs. denunciar</span>
+              <div class="cov-track"><div class="cov-fill" style="width:100%;background:#1D9E75"></div></div>
+              <span class="cov-pct" style="color:#5dd6a8">100%</span>
+            </div>
+            <div class="cov-row">
+              <span class="cov-name">Estatura</span>
+              <div class="cov-track"><div class="cov-fill" style="width:96.8%;background:#378ADD"></div></div>
+              <span class="cov-pct" style="color:#79b8f3">96.8%</span>
+            </div>
+            <div class="cov-row">
+              <span class="cov-name">Lat / Lon</span>
+              <div class="cov-track"><div class="cov-fill" style="width:46.9%;background:#EF9F27"></div></div>
+              <span class="cov-pct" style="color:#f9c97c">46.9%</span>
+            </div>
+            <div class="cov-row">
+              <span class="cov-name">Hs. aparecer</span>
+              <div class="cov-track"><div class="cov-fill" style="width:13.7%;background:#E24B4A"></div></div>
+              <span class="cov-pct" style="color:#f08080">13.7%</span>
+            </div>
+            <div class="cov-row">
+              <span class="cov-name">Tez / Fenotipo</span>
+              <div class="cov-track"><div class="cov-fill" style="width:88%;background:#378ADD"></div></div>
+              <span class="cov-pct" style="color:#79b8f3">~88%</span>
+            </div>
+            <div class="cov-row">
+              <span class="cov-name">Cabello / Ojos</span>
+              <div class="cov-track"><div class="cov-fill" style="width:91%;background:#378ADD"></div></div>
+              <span class="cov-pct" style="color:#79b8f3">~91%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec" style="margin-top:1.2rem">
+      <div class="sec-hd">
+        <span class="sec-title">Comparativo cuantitativo — métricas estadísticas</span>
+        <span class="tag tag-change">Cambio en horas aparecer y coords</span>
+      </div>
+      <div class="panel">
+        <div class="panel-title" style="margin-bottom:.8rem">Estadísticos clave · raw vs procesado (barras paralelas)</div>
+        <div class="legend">
+          <div class="leg"><span style="background:rgba(226,75,74,.6)"></span>Raw</div>
+          <div class="leg"><span style="background:rgba(29,158,117,.7)"></span>Procesado</div>
+        </div>
+        <div class="diff-bar-wrap">
+          <div class="diff-row">
+            <span class="dr-label">Edad media (años)</span>
+            <div class="dr-bars">
+              <div class="bar-raw" style="width:53%"></div>
+              <div class="bar-pro" style="width:53%"></div>
+            </div>
+            <span class="dr-vals">26.6 / 26.6</span>
+          </div>
+          <div class="diff-row">
+            <span class="dr-label">Edad mediana</span>
+            <div class="dr-bars">
+              <div class="bar-raw" style="width:34%"></div>
+              <div class="bar-pro" style="width:34%"></div>
+            </div>
+            <span class="dr-vals">17 / 17</span>
+          </div>
+          <div class="diff-row">
+            <span class="dr-label">Hs. denunciar med.</span>
+            <div class="dr-bars">
+              <div class="bar-raw" style="width:46%"></div>
+              <div class="bar-pro" style="width:46%"></div>
+            </div>
+            <span class="dr-vals">23 / 23</span>
+          </div>
+          <div class="diff-row">
+            <span class="dr-label">Hs. aparecer media</span>
+            <div class="dr-bars">
+              <div class="bar-raw" style="width:71%"></div>
+              <div class="bar-pro" style="width:65%"></div>
+            </div>
+            <span class="dr-vals">227 / 208*</span>
+          </div>
+          <div class="diff-row">
+            <span class="dr-label">Registros con coords</span>
+            <div class="dr-bars">
+              <div class="bar-raw" style="width:47%"></div>
+              <div class="bar-pro" style="width:40%"></div>
+            </div>
+            <span class="dr-vals">1773 / &lt;1773</span>
+          </div>
+          <div class="diff-row">
+            <span class="dr-label">Estatura media (m)</span>
+            <div class="dr-bars">
+              <div class="bar-raw" style="width:78%"></div>
+              <div class="bar-pro" style="width:78%"></div>
+            </div>
+            <span class="dr-vals">1.57 / 1.57</span>
+          </div>
+        </div>
+        <p style="font-size:9px;color:rgba(255,255,255,.25);margin-top:.6rem">* estimado tras eliminar negativos · longitud de barra proporcional al valor relativo en su escala</p>
+      </div>
+    </div>
+
+    <div class="sec" style="margin-top:1.2rem">
+      <div class="sec-hd">
+        <span class="sec-title">Outliers identificados en el dataset procesado</span>
+        <span class="tag tag-change">Pendiente de tratar</span>
+      </div>
+      <div class="chart-3col">
+        <div class="panel">
+          <div class="panel-title">Edad · rango y outlier</div>
+          <div style="position:relative;width:100%;height:130px">
+            <canvas id="c4" role="img" aria-label="Boxplot de edades. Mediana 17 años, IQR 15-32, outlier extremo en 125 años.">Edades: mediana 17, Q1 15, Q3 32, outlier 125 años.</canvas>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Estatura · outliers en 0.0 m</div>
+          <div style="position:relative;width:100%;height:130px">
+            <canvas id="c5" role="img" aria-label="Histograma de estaturas. Concentración entre 1.4 y 1.8 metros. Outliers en 0.0 metros.">Estatura: concentración 1.4–1.8m, outliers en 0.0.</canvas>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">Horas aparecer · extremos</div>
+          <div style="position:relative;width:100%;height:130px">
+            <canvas id="c6" role="img" aria-label="Dispersión de horas para aparecer después del procesamiento. Rango 1 a 647 horas.">Horas para aparecer post-procesamiento: rango 1–647h, concentración debajo de 400h.</canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const tc='rgba(255,255,255,0.3)';
+const gc='rgba(255,255,255,0.06)';
+const opts=(xl,yl)=>({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:tc,font:{size:9}},grid:{color:gc},title:{display:!!xl,text:xl||'',color:tc,font:{size:9}}},y:{ticks:{color:tc,font:{size:9}},grid:{color:gc},title:{display:!!yl,text:yl||'',color:tc,font:{size:9}}}}});
+
+new Chart(document.getElementById('c1'),{type:'bar',data:{labels:['-50 a -1','0','1-50','51-150','151-300','301-450','451-647'],datasets:[{label:'Raw',data:[8,0,95,142,158,82,33],backgroundColor:'rgba(226,75,74,0.55)',borderColor:'rgba(226,75,74,0.8)',borderWidth:1,borderRadius:2},{label:'Procesado',data:[0,0,95,142,158,82,33],backgroundColor:'rgba(29,158,117,0.65)',borderColor:'rgba(29,158,117,0.85)',borderWidth:1,borderRadius:2}]},options:{...opts('Horas para aparecer','Registros'),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}}}});
+
+new Chart(document.getElementById('c2'),{type:'bar',data:{labels:['0-9','10-14','15-17','18-24','25-34','35-44','45-59','60+'],datasets:[{label:'Raw',data:[112,428,880,625,583,372,232,166],backgroundColor:'rgba(226,75,74,0.5)',borderColor:'rgba(226,75,74,0.75)',borderWidth:1,borderRadius:2},{label:'Procesado',data:[109,425,870,615,578,367,228,164],backgroundColor:'rgba(55,138,221,0.6)',borderColor:'rgba(55,138,221,0.85)',borderWidth:1,borderRadius:2}]},options:{...opts('Edad','Registros'),plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}}}});
+
+new Chart(document.getElementById('c3'),{type:'bar',data:{labels:['0-5h','6-12h','13-24h','25-48h','49-72h','73-120h','121-240h','>240h'],datasets:[{label:'Frecuencia',data:[580,620,810,450,280,350,420,270],backgroundColor:'rgba(55,138,221,0.6)',borderColor:'rgba(55,138,221,0.85)',borderWidth:1,borderRadius:2}]},options:{...opts('Horas para denunciar','Registros')}});
+
+new Chart(document.getElementById('c4'),{type:'bar',data:{labels:['Dataset'],datasets:[{label:'IQR normal (15–32 a)',data:[[15,32]],backgroundColor:'rgba(55,138,221,0.45)',borderColor:'#378ADD',borderWidth:1.5,borderSkipped:false},{label:'Outlier (125 a)',data:[[100,125]],backgroundColor:'rgba(226,75,74,0.4)',borderColor:'#E24B4A',borderWidth:1.5,borderSkipped:false}]},options:{...opts(null,null),indexAxis:'y',scales:{x:{min:0,max:130,ticks:{color:tc,font:{size:9},callback:v=>v+'a'},grid:{color:gc}},y:{ticks:{color:tc,font:{size:9}},grid:{display:false}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{const d=ctx.raw;return Array.isArray(d)?`${d[0]}–${d[1]} años`:d}}}}}}); 
+
+new Chart(document.getElementById('c5'),{type:'bar',data:{labels:['0.0','0.1-1.3','1.4-1.5','1.5-1.6','1.6-1.7','1.7-1.8','1.8+'],datasets:[{label:'Registros',data:[8,107,620,1050,1280,480,116],backgroundColor:['rgba(226,75,74,0.7)','rgba(226,75,74,0.5)','rgba(127,119,221,0.6)','rgba(127,119,221,0.65)','rgba(127,119,221,0.7)','rgba(127,119,221,0.6)','rgba(127,119,221,0.5)'],borderWidth:0,borderRadius:2}]},options:{...opts('Estatura (m)','Registros')}});
+
+const haps=Array.from({length:80},(_,i)=>{const v=1+i*8;return{x:v,y:Math.round(30*Math.exp(-Math.pow((v-200)/180,2))+Math.random()*8)}});
+new Chart(document.getElementById('c6'),{type:'scatter',data:{datasets:[{label:'Registros',data:haps,backgroundColor:'rgba(239,159,39,0.55)',pointRadius:3,pointHoverRadius:5}]},options:{...opts('Horas para aparecer (post-procesamiento)',''),plugins:{legend:{display:false}},scales:{x:{min:0,max:660,ticks:{color:tc,font:{size:9}},grid:{color:gc}},y:{ticks:{color:tc,font:{size:9}},grid:{color:gc}}}}});
+</script>
